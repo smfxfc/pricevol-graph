@@ -2,19 +2,16 @@
 """Pull trading data from Cryptocompare and graph trailing 3-month price/volume activity"""
 
 # TODO: add webhook to run script when Slackbot receives a message (Flask)
-# TODO: take symbol input from user
-# TODO: reformat code for modularity
+# TODO: implement testing
 
 from datetime import datetime, timedelta
-from turtle import fillcolor
+from turtle import bgcolor, fillcolor
 import pandas as pd
 import numpy as np
 import requests
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-from pprint import pprint
-
 
 # retrieve dataframe
 def retrieve_data(
@@ -25,68 +22,97 @@ def retrieve_data(
     page = requests.get(url)
     data = page.json()["Data"]
     df = pd.DataFrame(data)
+    df.name = symbol.upper()  # storing input symbol for later use chart titles
     return df
 
 
 def format_data(df):
     """
     Strip dataframe to required columns and format times from unix to m/d/Y.
-    TODO: is this even necessary?
     """
     df["time"] = [datetime.fromtimestamp(d) for d in df.time]
     df["time"] = df["time"] + pd.Timedelta(
-        hours=0
-    )  # toggle this depending on timezone.
+        hours=6  # toggle this depending on timezone.
+    )
     df["time"] = pd.to_datetime(df.time)
     df["time"] = df["time"].dt.strftime("%m/%d/%Y")
     return df
 
 
-df = retrieve_data("ETH")
-df = format_data(df)
-graph_df = df.tail(90)  # only plotting last 90 days
+def chart(df):
+    """Create combined line+bar chart from dataframe."""
+    SYM = df.name  # for use in axes titles
+    df = df.tail(93)
+
+    # set up plotly figure
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # close price line chart
+    fig.add_trace(
+        go.Scatter(
+            x=df["time"],
+            y=df["close"],
+            line=dict(color="blue", width=5),
+            marker_color="blue",
+            name=f"{SYM} 'Closing Price'",
+            opacity=1,
+            showlegend=True,
+        ),
+    )
+
+    # volume bar chart as secondary axis
+    fig.add_trace(
+        go.Bar(
+            x=df["time"],
+            y=df["volumeto"],
+            marker_color="red",
+            name="Volume",
+            opacity=0.8,
+            showlegend=True,
+        ),
+        secondary_y=True,
+    )
+
+    # TODO: add transparency to bars so that line is more visible when they overlap
+    fig.update_layout(
+        yaxis=dict(
+            title=dict(text=f"<b>{SYM} Price (USD)</b><br>", font=dict(size=24)),
+            tickprefix="$",
+            tickformat=",",
+            title_standoff=50,
+            gridcolor="Black",
+            range=[0, df["close"].max()],
+        ),
+        yaxis2=dict(
+            title=dict(text=f"<b>{SYM} Volume (USD)</b><br>", font=dict(size=24)),
+            tickprefix="$",
+            tickformat=",",
+            title_standoff=50,
+            showgrid=False,
+        ),
+        xaxis=dict(dtick=4, tickangle=-45, title_standoff=50),
+        legend=dict(
+            orientation="h",
+            x=0.4,
+            traceorder="reversed",
+            font=dict(size=24),
+        ),
+        font_family="Calibri",
+        font_color="Black",
+        font_size=20,
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=50, r=50, b=0, t=25, pad=0),
+    )
+
+    fig.show()
 
 
-# set up plotly figure
-fig = make_subplots(specs=[[{"secondary_y": True}]])
-# fig = make_subplots(1, 2)
-# close price line chart
-fig.add_trace(
-    go.Scatter(
-        x=graph_df["time"],
-        y=graph_df["close"],
-        line=dict(color="blue", width=5),
-        marker_color="blue",
-        name="Closing Price",
-        opacity=1,
-        showlegend=True,
-    ),
-)
+def main():
+    SYM = input("Enter token symbol: ")
+    df = retrieve_data(SYM)
+    df = format_data(df)
+    chart(df)
 
-# volume bar chart as secondary axis
-fig.add_trace(
-    go.Bar(
-        x=graph_df["time"],
-        y=graph_df["volumeto"],
-        marker_color="red",
-        name="Volume",
-        opacity=0.8,
-        showlegend=True,
-    ),
-    secondary_y=True,
-)
 
-# TODO: add transparency to bars so that line is more visible when they overlap
-fig.update_layout(
-    yaxis=dict(tickprefix="$", tickformat=","),
-    yaxis2=dict(tickprefix="$", tickformat=","),
-    xaxis=dict(dtick=4, tickangle=-45),
-    legend=dict(
-        orientation="h",
-        x=0.4,
-        traceorder="reversed",
-        font=dict(family="Calibri", size=18, color="Blue"),
-    ),
-)
-
-fig.show()
+if __name__ == "__main__":
+    main()
