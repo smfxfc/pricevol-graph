@@ -4,6 +4,7 @@
 # TODO: take symbol input from user
 
 from datetime import datetime, timedelta
+from turtle import fillcolor
 import pandas as pd
 import numpy as np
 import requests
@@ -45,17 +46,17 @@ graph_df = df.tail(90)  # only plotting last 90 days
 
 
 # set up plotly figure
-fig = make_subplots(specs= [[{"secondary_y" : True}]])
+fig = make_subplots(specs=[[{"secondary_y": True}]])
 # fig = make_subplots(1, 2)
-
 # close price line chart
 fig.add_trace(
     go.Scatter(
         x=graph_df["time"],
         y=graph_df["close"],
         line=dict(color="blue", width=5),
+        marker_color="blue",
         name="Closing Price",
-        # opacity=1,
+        opacity=1,
         showlegend=True,
     ),
 )
@@ -67,15 +68,13 @@ fig.add_trace(
         y=graph_df["volumeto"],
         marker_color="red",
         name="Volume",
-        # opacity=.8,
-
+        opacity=0.8,
         showlegend=True,
     ),
     secondary_y=True,
-
 )
 
-
+# TODO: add transparency to bars so that line is more visible when they overlap
 fig.update_layout(
     yaxis=dict(tickprefix="$", tickformat=","),
     yaxis2=dict(tickprefix="$", tickformat=","),
@@ -84,11 +83,8 @@ fig.update_layout(
         orientation="h",
         x=0.4,
         traceorder="reversed",
-        font=dict(family="Calibri", size=12, color="Blue"),
+        font=dict(family="Calibri", size=18, color="Blue"),
     ),
 )
-
-# TODO: add secondary y axis and bar chart of volume data
-# fig.update_yaxes(title_text="Column1", secondary_y=True)
 
 fig.show()
