@@ -45,25 +45,45 @@ graph_df = df.tail(90)  # only plotting last 90 days
 
 
 # set up plotly figure
-fig = make_subplots(1, 2)
+fig = make_subplots(specs= [[{"secondary_y" : True}]])
+# fig = make_subplots(1, 2)
 
-# add first scatter trace at row = 1, col = 1
+# close price line chart
 fig.add_trace(
     go.Scatter(
         x=graph_df["time"],
         y=graph_df["close"],
-        line=dict(color="blue"),
+        line=dict(color="blue", width=5),
         name="Closing Price",
+        # opacity=1,
         showlegend=True,
-    )
+    ),
 )
+
+# volume bar chart as secondary axis
+fig.add_trace(
+    go.Bar(
+        x=graph_df["time"],
+        y=graph_df["volumeto"],
+        marker_color="red",
+        name="Volume",
+        # opacity=.8,
+
+        showlegend=True,
+    ),
+    secondary_y=True,
+
+)
+
+
 fig.update_layout(
     yaxis=dict(tickprefix="$", tickformat=","),
+    yaxis2=dict(tickprefix="$", tickformat=","),
     xaxis=dict(dtick=4, tickangle=-45),
     legend=dict(
         orientation="h",
-        x=0.2,
-        traceorder="normal",
+        x=0.4,
+        traceorder="reversed",
         font=dict(family="Calibri", size=12, color="Blue"),
     ),
 )
