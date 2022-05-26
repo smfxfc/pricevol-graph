@@ -1,7 +1,9 @@
 #! python3
 """Pull trading data from Cryptocompare and graph trailing 3-month price/volume activity"""
 
+# TODO: add webhook to run script when Slackbot receives a message (Flask)
 # TODO: take symbol input from user
+# TODO: reformat code for modularity
 
 from datetime import datetime, timedelta
 from turtle import fillcolor
